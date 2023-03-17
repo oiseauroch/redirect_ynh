@@ -1,0 +1,14 @@
+version = "1.0"
+
+    
+[main]
+
+    [main.redirect]
+    name = "Configuration"
+
+
+        [main.redirect.redirect_path]
+        ask = "Choose a redirect path"
+        type = "string"
+        bind = "redirect_path()"
+
