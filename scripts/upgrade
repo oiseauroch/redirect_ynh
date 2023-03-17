@@ -10,17 +10,6 @@
 source /usr/share/yunohost/helpers
 
 #=================================================
-# LOAD SETTINGS
-#=================================================
-
-# Retrieve arguments
-app=$YNH_APP_INSTANCE_NAME
-domain=$(ynh_app_setting_get --app=$app --key=domain)
-path_url=$(ynh_app_setting_get --app=$app --key=path)
-redirect_type=$(ynh_app_setting_get --app=$app --key=redirect_type)
-redirect_path=$(ynh_app_setting_get --app=$app --key=redirect_path)
-
-#=================================================
 # ENSURE DOWNWARD COMPATIBILITY
 #=================================================
 
@@ -64,26 +53,6 @@ then
     ynh_app_setting_set $app 'redirect_type' $redirect_type
 fi
 
-# Migrate legacy permissions to new system
-if ynh_legacy_permissions_exists
-then
-    ynh_legacy_permissions_delete_all
-
-    ynh_app_setting_delete --app=$app --key=is_public
-fi
-
-#=================================================
-# BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
-#=================================================
-
-# Backup the current version of the app
-ynh_backup_before_upgrade
-ynh_clean_setup () {
-	# restore it if the upgrade fails
-	ynh_restore_upgradebackup
-}
-# Exit if an error occurs during the execution of the script
-ynh_abort_if_errors
 
 # Validate redirect path
 url_regex='(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]'
@@ -96,7 +65,7 @@ url_regex='(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=
 # Nginx configuration
 for FILE in $(ls ../conf/nginx-*.conf)
 do
-    ynh_replace_string "YNH_LOCATION" "$path_url" $FILE
+    ynh_replace_string "YNH_LOCATION" "$path" $FILE
 done
 if [ "$redirect_type" = "public_302" ];
 then
@@ -123,12 +92,6 @@ then
 	ynh_permission_update --permission="main" --add="visitors"
 fi
 
-#=================================================
-# RELOAD NGINX
-#=================================================
-ynh_script_progression --message="Reloading NGINX web server..." --weight=1
-
-ynh_systemd_action --service_name=nginx --action=reload
 
 #=================================================
 # END OF SCRIPT
